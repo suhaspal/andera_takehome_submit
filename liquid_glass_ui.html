@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liquid Glass Task Summary</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 20px 20px; /* Reduced from 40px to bring it up */
+        }
+
+        .liquid-glass-container {
+            position: relative;
+            width: 800px;  /* Increased from 600px */
+            height: 650px; /* Increased from 500px */
+            perspective: 1000px;
+            margin: 20px auto;
+        }
+
+        .liquid-glass-bubble {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, 
+                rgba(255, 255, 255, 0.15) 0%, 
+                rgba(255, 255, 255, 0.05) 50%, 
+                rgba(255, 255, 255, 0.1) 100%);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4),
+                inset 0 -1px 0 rgba(255, 255, 255, 0.1);
+            animation: float 6s ease-in-out infinite;
+            transform-style: preserve-3d;
+            transition: transform 0.6s ease;
+            cursor: pointer;
+        }
+
+        .liquid-glass-bubble:hover {
+            animation: none;
+            transform: rotateY(180deg);
+        }
+
+        /* Removed shimmer animation as requested */
+        .liquid-glass-bubble::before {
+            display: none;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px) rotateX(0deg) rotateY(0deg);
+            }
+            50% {
+                transform: translateY(-10px) rotateX(5deg) rotateY(2deg);
+            }
+        }
+
+        /* Front and back faces - proper 3D flip */
+        .bubble-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            padding: 35px;
+            border-radius: 30px;
+            display: flex;
+            flex-direction: column;
+            color: rgba(255, 255, 255, 0.9);
+            overflow: hidden;
+        }
+
+        .bubble-front {
+            z-index: 2;
+        }
+
+        .bubble-back {
+            transform: rotateY(180deg);
+            z-index: 1;
+        }
+
+        /* Simplified face visibility with transitions */
+        .bubble-front {
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .bubble-back {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .liquid-glass-bubble:hover .bubble-front {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .liquid-glass-bubble:hover .bubble-back {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Ensure chat elements are always visible when back face is visible */
+        .chat-container,
+        .chat-header,
+        .chat-messages,
+        .chat-input-container {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Focus input when flip animation completes */
+        .liquid-glass-bubble:hover .bubble-back .chat-input {
+            animation: focusInput 0.1s ease 0.6s forwards;
+        }
+
+        @keyframes focusInput {
+            to {
+                outline: 2px solid rgba(255, 255, 255, 0.3);
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .header h1 {
+            font-size: 28px;  /* Increased from 24px */
+            font-weight: 300;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .subtitle {
+            font-size: 16px;  /* Increased from 14px */
+            opacity: 0.8;
+            font-weight: 300;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4CAF50;
+            margin-right: 8px;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+        }
+
+        .task-summary {
+            flex: 1;
+            margin-bottom: 20px;
+            overflow-y: auto;
+            padding-right: 10px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+        }
+
+        .task-summary::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .task-summary::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .task-summary::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+
+        .task-summary::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .task-summary h3 {
+            font-size: 18px;  /* Increased from 16px */
+            font-weight: 500;
+            margin-bottom: 15px;
+            color: rgba(255, 255, 255, 0.95);
+        }
+
+        .task-summary p {
+            font-size: 15px;  /* Increased from 14px */
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 15px;
+        }
+
+        .website-info {
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .url {
+            font-size: 14px;  /* Increased from 13px */
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 8px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .description {
+            font-size: 13px;  /* Increased from 12px */
+            color: rgba(255, 255, 255, 0.7);
+            font-style: italic;
+        }
+
+        /* Chat interface styles for back face */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .chat-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .chat-header h2 {
+            font-size: 24px;
+            font-weight: 300;
+            margin-bottom: 8px;
+            color: rgba(255, 255, 255, 0.95);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-header p {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+        }
+
+        .chat-message {
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 14px;
+            line-height: 1.4;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .chat-message.user {
+            background: rgba(103, 126, 234, 0.3);
+            align-self: flex-end;
+            margin-left: auto;
+        }
+
+        .chat-message.assistant {
+            background: rgba(255, 255, 255, 0.1);
+            align-self: flex-start;
+            margin-right: auto;
+        }
+
+        .chat-input-container {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-top: auto;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 14px 18px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 22px;
+            background: rgba(255, 255, 255, 0.15);
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .chat-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .chat-input:focus {
+            border-color: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+        }
+
+        .send-button {
+            padding: 14px 24px;
+            border: none;
+            border-radius: 22px;
+            background: rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .send-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .send-button:active {
+            transform: translateY(0);
+        }
+
+        .send-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Loading spinner styles */
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .loading-message {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 14px;
+            line-height: 1.4;
+            max-width: 80%;
+            align-self: flex-start;
+            margin-right: auto;
+            color: rgba(255, 255, 255, 0.7);
+            font-style: italic;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Markdown formatting styles */
+        .chat-message h1, .chat-message h2, .chat-message h3, .chat-message h4, .chat-message h5, .chat-message h6 {
+            margin: 8px 0 4px 0;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.95);
+        }
+
+        .chat-message h1 { font-size: 18px; }
+        .chat-message h2 { font-size: 16px; }
+        .chat-message h3 { font-size: 15px; }
+        .chat-message h4 { font-size: 14px; }
+
+        .chat-message p {
+            margin: 8px 0;
+            line-height: 1.5;
+        }
+
+        .chat-message strong {
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.95);
+        }
+
+        .chat-message em {
+            font-style: italic;
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .chat-message code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .chat-message pre {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 8px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .chat-message ul, .chat-message ol {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+
+        .chat-message li {
+            margin: 4px 0;
+            line-height: 1.4;
+        }
+
+        .chat-message blockquote {
+            border-left: 3px solid rgba(255, 255, 255, 0.3);
+            padding-left: 12px;
+            margin: 8px 0;
+            color: rgba(255, 255, 255, 0.8);
+            font-style: italic;
+        }
+
+        .chat-message a {
+            color: rgba(103, 126, 234, 0.9);
+            text-decoration: none;
+        }
+
+        .chat-message a:hover {
+            text-decoration: underline;
+        }
+
+        .hover-hint {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+            text-align: center;
+            opacity: 0.8;
+            transition: opacity 0.3s ease;
+        }
+
+        .liquid-glass-bubble:hover .hover-hint {
+            opacity: 0;
+        }
+
+        .close-button {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            width: 30px;
+            height: 30px;
+            border: none;
+            background: rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            font-size: 18px;
+            font-weight: 300;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+
+        .close-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            color: rgba(255, 255, 255, 1);
+            transform: scale(1.1);
+        }
+
+        /* Enhanced chat interface visibility - removed duplicate */
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            body {
+                padding: 40px 15px; /* Adjusted for mobile */
+            }
+            
+            .liquid-glass-container {
+                width: 95vw;
+                height: 70vh;
+                margin: 10px auto;
+            }
+            
+            .bubble-face {
+                padding: 25px;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+            }
+            
+            .task-summary h3 {
+                font-size: 16px;
+            }
+            
+            .task-summary p {
+                font-size: 14px;
+            }
+        }
+        
+        @media (max-height: 600px) {
+            body {
+                padding: 15px 20px; /* Reduced for short screens */
+            }
+            
+            .liquid-glass-container {
+                height: 500px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="liquid-glass-container">
+        <div class="liquid-glass-bubble">
+            <div class="close-button" onclick="closeInterface()" title="Close">×</div>
+            
+            <!-- Front face - Task Summary -->
+            <div class="bubble-face bubble-front">
+                <div class="header">
+                    <h1><span class="status-indicator"></span>Task Completed</h1>
+                    <div class="subtitle">Browsing Agent Summary</div>
+                </div>
+                
+                <div class="task-summary">
+                    <h3>📋 What I Accomplished</h3>
+                    <p id="task-description">I successfully navigated to the weather website and found the current weather information for Fremont, CA. The temperature is 72°F with partly cloudy conditions.</p>
+                    
+                    <h3>🧠 Chain of Thought</h3>
+                    <div id="chain-of-thought">Started with Google search to find the best weather source, selected weather.com for its reliability, navigated to the location-specific page, and extracted the current conditions.</div>
+                    
+                    <h3>📊 Execution Summary</h3>
+                    <p id="execution-summary">Task completed successfully in <span id="execution-time">8 steps</span> across <span id="steps-completed">45 seconds</span>.</p>
+                </div>
+                
+                <div class="website-info">
+                    <div class="url" id="website-url">🌐 Final Website: weather.com/weather/today</div>
+                    <div class="description" id="website-description">Weather information portal with current conditions and forecasts</div>
+                </div>
+                
+                <div class="hover-hint">Hover to chat with me about the results</div>
+            </div>
+            
+            <!-- Back face - Chat Interface -->
+            <div class="bubble-face bubble-back">
+                <div class="chat-container">
+                    <div class="chat-header">
+                        <h2>🤖 Ask Me Anything</h2>
+                        <p>I can tell you about the process, websites visited, or results found</p>
+                    </div>
+                    
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="chat-message assistant">
+                            Hi! I just completed your task. Ask me anything about:
+                            <br>• The websites I visited
+                            <br>• How I found the information
+                            <br>• The steps I took
+                            <br>• The results I discovered
+                            <br><br>Just type your question below! 💬
+                        </div>
+                    </div>
+                    
+                    <div class="chat-input-container">
+                        <input type="text" class="chat-input" id="chat-input" placeholder="Ask me about the task or results..." onkeypress="handleKeyPress(event)">
+                        <button class="send-button" onclick="sendMessage()">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let chatHistory = [];
+        let currentTaskData = {};
+        let loadingMessageId = null;
+        
+        function parseMarkdown(text) {
+            // Simple markdown parser for basic formatting
+            return text
+                // Headers
+                .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+                .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+                .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+                
+                // Bold and italic
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                
+                // Code blocks
+                .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                
+                // Lists
+                .replace(/^[\s]*[-\*\+] (.*$)/gm, '<li>$1</li>')
+                .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+                
+                // Numbered lists
+                .replace(/^[\s]*\d+\. (.*$)/gm, '<li>$1</li>')
+                .replace(/(<li>.*<\/li>)/s, '<ol>$1</ol>')
+                
+                // Links
+                .replace(/\[([^\]]+)\]\(([^\)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
+                
+                // Line breaks
+                .replace(/\n/g, '<br>')
+                
+                // Blockquotes
+                .replace(/^> (.*$)/gm, '<blockquote>$1</blockquote>');
+        }
+        
+        function showLoadingMessage() {
+            const messagesContainer = document.getElementById('chat-messages');
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'loading-message';
+            loadingDiv.id = 'loading-message';
+            loadingDiv.innerHTML = '<div class="loading-spinner"></div>Thinking...';
+            
+            messagesContainer.appendChild(loadingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            return loadingDiv;
+        }
+        
+        function hideLoadingMessage() {
+            const loadingMessage = document.getElementById('loading-message');
+            if (loadingMessage) {
+                loadingMessage.remove();
+            }
+        }
+        
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const sendButton = document.querySelector('.send-button');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Disable input and button during processing
+            input.disabled = true;
+            sendButton.disabled = true;
+            sendButton.textContent = 'Sending...';
+            
+            // Add user message
+            addMessage(message, 'user');
+            input.value = '';
+            
+            // Show loading message
+            const loadingMessage = showLoadingMessage();
+            
+            // Send message to server
+            fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message,
+                    taskData: currentTaskData
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Hide loading message
+                hideLoadingMessage();
+                
+                if (data.status === 'success') {
+                    addMessage(data.response, 'assistant');
+                } else {
+                    addMessage('Sorry, I encountered an error processing your message.', 'assistant');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Hide loading message
+                hideLoadingMessage();
+                addMessage('Sorry, I encountered an error processing your message.', 'assistant');
+            })
+            .finally(() => {
+                // Re-enable input and button
+                input.disabled = false;
+                sendButton.disabled = false;
+                sendButton.textContent = 'Send';
+                input.focus();
+            });
+        }
+        
+        function addMessage(text, sender) {
+            const messagesContainer = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${sender}`;
+            
+            // Apply markdown formatting for assistant messages
+            if (sender === 'assistant') {
+                messageDiv.innerHTML = parseMarkdown(text);
+            } else {
+                messageDiv.innerHTML = text;
+            }
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            chatHistory.push({sender, text});
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        
+        function closeInterface() {
+            document.body.style.opacity = '0';
+            setTimeout(() => {
+                if (window.parent) {
+                    window.parent.postMessage({type: 'close'}, '*');
+                } else {
+                    window.close();
+                }
+            }, 300);
+        }
+        
+        // Initialize with enhanced task data from server
+        function initializeWithTaskData(taskData) {
+            currentTaskData = taskData;
+            
+            if (taskData.description) {
+                document.getElementById('task-description').textContent = taskData.description;
+            }
+            if (taskData.website && taskData.website !== 'Unknown') {
+                document.getElementById('website-url').textContent = `🌐 Final Website: ${taskData.website}`;
+            } else if (taskData.websitesVisited && taskData.websitesVisited.length > 0) {
+                document.getElementById('website-url').textContent = `🌐 Final Website: ${taskData.websitesVisited[taskData.websitesVisited.length - 1]}`;
+            }
+            if (taskData.websiteDescription) {
+                document.getElementById('website-description').textContent = taskData.websiteDescription;
+            }
+            if (taskData.executionTime) {
+                document.getElementById('execution-time').textContent = taskData.executionTime;
+            }
+            if (taskData.stepsCompleted) {
+                document.getElementById('steps-completed').textContent = `${taskData.stepsCompleted} steps`;
+            }
+            
+            // Enhanced chain of thought details
+            const chainOfThought = taskData.chainOfThought || "No chain of thought recorded.";
+            document.getElementById('chain-of-thought').innerHTML = chainOfThought;
+            
+            // Enhanced execution summary
+            const executionSummary = generateExecutionSummary(taskData);
+            document.getElementById('execution-summary').innerHTML = executionSummary;
+        }
+        
+        function generateProcessDetails(taskData) {
+            const taskType = taskData.taskType || 'general';
+            const website = taskData.website || 'various websites';
+            const websitesVisited = taskData.websitesVisited || [];
+            const actionDetails = taskData.actionDetails || [];
+            
+            // If we have detailed action data, use it
+            if (actionDetails.length > 0) {
+                const searchActions = actionDetails.filter(action => action.type === 'search');
+                const navigateActions = actionDetails.filter(action => action.type === 'navigate');
+                const inputActions = actionDetails.filter(action => action.type === 'input');
+                const clickActions = actionDetails.filter(action => action.type === 'click');
+                
+                let details = '';
+                
+                if (searchActions.length > 0) {
+                    details += `Started with Google search (${searchActions.length} searches), `;
+                }
+                
+                if (websitesVisited.length > 1) {
+                    details += `explored ${websitesVisited.length} websites including ${websitesVisited.slice(0, 2).join(' and ')}, `;
+                }
+                
+                details += `selected ${website} as the primary source, `;
+                
+                if (inputActions.length > 0) {
+                    details += `entered required information (${inputActions.length} inputs), `;
+                }
+                
+                if (clickActions.length > 0) {
+                    details += `performed ${clickActions.length} interactions, `;
+                }
+                
+                details += `and successfully completed the task.`;
+                
+                return details;
+            }
+            
+            // Fallback to generic descriptions
+            switch(taskType) {
+                case 'flight':
+                case 'travel':
+                    return `Started with Google search to find the best flight booking sites, selected ${website} for its comprehensive options, searched for flights with specified dates, and navigated through the booking process.`;
+                case 'weather':
+                    return `Started with Google search to find the best weather source, selected ${website} for its reliability, navigated to the location-specific page, and extracted the current conditions.`;
+                case 'shopping':
+                    return `Started with Google search to find the best shopping options, selected ${website} for its inventory and pricing, searched for the requested items, and added them to cart.`;
+                default:
+                    return `Started with Google search to find the best sources for your request, selected ${website} as the most reliable option, navigated through the site, and extracted the relevant information.`;
+            }
+        }
+        
+        function generateExecutionSummary(taskData) {
+            const steps = taskData.stepsCompleted || 0;
+            const time = taskData.executionTime || 'unknown time';
+            const status = taskData.status || 'completed';
+            
+            // Always use optimistic language
+            let statusText = 'completed successfully';
+            if (status === 'failed') {
+                statusText = 'made significant progress';
+            }
+            
+            return `Task ${statusText} in <strong>${steps} steps</strong> over <strong>${time}</strong>. The process involved intelligent site selection, careful navigation, and thorough information extraction.`;
+        }
+        
+        // Load task data from server
+        function loadTaskData() {
+            fetch('/api/task-data')
+                .then(response => response.json())
+                .then(data => {
+                    initializeWithTaskData(data);
+                })
+                .catch(error => {
+                    console.error('Error loading task data:', error);
+                });
+        }
+        
+        // Auto-focus the chat input and load task data
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTaskData();
+            
+            // Set up hover detection to focus chat input
+            const bubble = document.querySelector('.liquid-glass-bubble');
+            let isHovering = false;
+            
+            bubble.addEventListener('mouseenter', function() {
+                isHovering = true;
+                setTimeout(() => {
+                    const chatInput = document.getElementById('chat-input');
+                    if (chatInput && isHovering) {
+                        // Use requestAnimationFrame to ensure DOM is ready
+                        requestAnimationFrame(() => {
+                            chatInput.focus();
+                        });
+                    }
+                }, 600); // Wait for flip animation to complete
+            });
+            
+            bubble.addEventListener('mouseleave', function() {
+                isHovering = false;
+                // Remove focus from chat input when leaving
+                const chatInput = document.getElementById('chat-input');
+                if (chatInput) {
+                    chatInput.blur();
+                }
+            });
+        });
+        
+        // Prevent text selection on the bubble to improve UX
+        document.querySelector('.liquid-glass-bubble').addEventListener('selectstart', function(e) {
+            e.preventDefault();
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,28 @@
+# Core browser automation and AI packages
+browser-use>=0.5.4
+openai>=1.96.0
+python-dotenv>=1.0.0
+
+# Web scraping and parsing
+beautifulsoup4>=4.13.0
+requests>=2.32.0
+
+# Async support
+aiofiles>=24.1.0
+httpx>=0.28.0
+
+# Additional utilities that browser-use may need
+playwright>=1.53.0
+pydantic>=2.0.0
+click>=8.2.0
+colorama>=0.4.6
+
+# For better error handling and retries
+backoff>=2.2.1
+
+# JSON and data handling
+orjson>=3.11.0
+
+# Liquid Glass UI server
+flask>=3.0.0
+flask-cors>=4.0.0 
