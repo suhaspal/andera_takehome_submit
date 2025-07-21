@@ -274,25 +274,6 @@ config["wait_between_actions"] = 0.5
 # Use custom config
 agent = GeneralizableBrowsingAgent(**config)
 ```
-
-## 🤝 Contributing
-
-This project welcomes contributions! Here are some areas where help would be appreciated:
-
-### Potential Improvements
-- **Enhanced Vision**: Better screenshot analysis and element detection
-- **Multi-Agent Coordination**: Parallel task execution across multiple agents  
-- **Predictive Caching**: Pre-loading likely next steps for faster execution
-- **Additional LLM Support**: Integration with more AI providers
-- **Enterprise Features**: Audit logging, SSO integration, API access
-
-### Development Setup
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
 ## 📋 System Requirements
 
 ### Minimum Requirements
