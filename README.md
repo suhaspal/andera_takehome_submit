@@ -313,10 +313,6 @@ agent = GeneralizableBrowsingAgent(**config)
 - Try manually visiting `http://localhost:5000`
 - Disable firewall/antivirus temporarily
 
-## 📄 License
-
-This project is provided for educational and evaluation purposes. Please ensure compliance with website terms of service and applicable laws when using this automation tool.
-
 ## 🙏 Acknowledgments
 
 - Built on the excellent [browser-use](https://github.com/browser-use/browser-use) framework
